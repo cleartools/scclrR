@@ -160,6 +160,38 @@ ggplot(pca_df, aes(PC1, PC2, color = age_label, shape = age_label)) +
 
 The manuscript figure compares PC1 loadings to a supervised old-vs-young
 differential expression estimate. In R, the natural replacement is `edgeR`.
+For comparison, we also run the standard Seurat log-normalization workflow and
+make the same PC1-loading scatterplot.
+
+```{r seurat-default-pca}
+lung_seurat <- NormalizeData(
+  lung,
+  assay = "RNA",
+  normalization.method = "LogNormalize",
+  scale.factor = 10000,
+  verbose = FALSE
+)
+lung_seurat <- FindVariableFeatures(
+  lung_seurat,
+  assay = "RNA",
+  nfeatures = min(2000, nrow(lung_seurat)),
+  verbose = FALSE
+)
+lung_seurat <- ScaleData(
+  lung_seurat,
+  assay = "RNA",
+  features = VariableFeatures(lung_seurat),
+  verbose = FALSE
+)
+lung_seurat <- RunPCA(
+  lung_seurat,
+  assay = "RNA",
+  features = VariableFeatures(lung_seurat),
+  npcs = 5,
+  reduction.name = "seurat_pca",
+  verbose = FALSE
+)
+```
 
 ```{r edger}
 group <- factor(lung$age_label, levels = c("Young", "Old"))
@@ -180,13 +212,28 @@ loadings <- data.frame(
 )
 merged <- merge(loadings, de, by = "gene")
 cor(merged$pc1_loading, merged$logFC)
+
+seurat_loadings <- data.frame(
+  gene = rownames(Loadings(lung_seurat, "seurat_pca")),
+  pc1_loading = Loadings(lung_seurat, "seurat_pca")[, 1]
+)
+merged_seurat <- merge(seurat_loadings, de, by = "gene")
+cor(merged_seurat$pc1_loading, merged_seurat$logFC)
 ```
 
 ```{r loading-plot, fig.cap = "PFlogPF PC1 loadings compared with edgeR old-vs-young log fold changes."}
-ggplot(merged, aes(logFC, pc1_loading)) +
+ggplot(merged, aes(pc1_loading, logFC)) +
   geom_point(aes(color = FDR < 0.05), alpha = 0.6, size = 1.2) +
   scale_color_manual(values = c(`FALSE` = "grey70", `TRUE` = "#2c7fb8"), name = "edgeR FDR < 0.05") +
-  labs(x = "edgeR old-vs-young log fold change", y = "PFlogPF PC1 loading") +
+  labs(x = "PFlogPF PC1 loading", y = "edgeR old-vs-young log fold change") +
+  theme_classic(base_size = 11)
+```
+
+```{r seurat-loading-plot, fig.cap = "Seurat default-normalization PC1 loadings compared with edgeR old-vs-young log fold changes."}
+ggplot(merged_seurat, aes(pc1_loading, logFC)) +
+  geom_point(aes(color = FDR < 0.05), alpha = 0.6, size = 1.2) +
+  scale_color_manual(values = c(`FALSE` = "grey70", `TRUE` = "#2c7fb8"), name = "edgeR FDR < 0.05") +
+  labs(x = "Seurat default-normalization PC1 loading", y = "edgeR old-vs-young log fold change") +
   theme_classic(base_size = 11)
 ```
 
