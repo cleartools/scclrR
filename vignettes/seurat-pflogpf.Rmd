@@ -211,6 +211,9 @@ loadings <- data.frame(
   pc1_loading = Loadings(lung, "scclr_pca")[, 1]
 )
 merged <- merge(loadings, de, by = "gene")
+if (cor(merged$pc1_loading, merged$logFC) < 0) {
+  merged$pc1_loading <- -merged$pc1_loading
+}
 cor(merged$pc1_loading, merged$logFC)
 
 seurat_loadings <- data.frame(
@@ -218,6 +221,9 @@ seurat_loadings <- data.frame(
   pc1_loading = Loadings(lung_seurat, "seurat_pca")[, 1]
 )
 merged_seurat <- merge(seurat_loadings, de, by = "gene")
+if (cor(merged_seurat$pc1_loading, merged_seurat$logFC) < 0) {
+  merged_seurat$pc1_loading <- -merged_seurat$pc1_loading
+}
 cor(merged_seurat$pc1_loading, merged_seurat$logFC)
 ```
 
