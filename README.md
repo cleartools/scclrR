@@ -5,6 +5,9 @@
 PFlogPF, also called shifted centered log-ratio normalization, and runs sparse
 PCA through Rust bindings to `runorm` and `rupca`.
 
+Rendered documentation and the Angelidis pseudobulk vignette are published at
+<https://cleartools.github.io/scclrR/>.
+
 The key representation is:
 
 - a sparse matrix containing the shifted log values, stored as a Seurat assay

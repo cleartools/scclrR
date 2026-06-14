@@ -1,0 +1,27 @@
+url: https://cleartools.github.io/scclrR/
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#2c7fb8"
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [github]
+
+reference:
+  - title: Seurat workflow
+    contents:
+      - pflogpf
+      - run_pca
+  - title: Matrix API
+    contents:
+      - estimate_overdispersion
+      - normalize_matrix
+      - pca_matrix
+
+articles:
+  - title: Vignettes
+    navbar: ~
+    contents:
+      - seurat-pflogpf

@@ -19,6 +19,9 @@ Imports:
     Matrix,
     methods
 Suggests:
+    edgeR,
+    ggplot2,
+    pkgdown,
     Seurat,
     SeuratObject,
     knitr,
@@ -26,5 +29,5 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-URL: https://github.com/cleartools/scclrR
+URL: https://cleartools.github.io/scclrR/, https://github.com/cleartools/scclrR
 BugReports: https://github.com/cleartools/scclrR/issues

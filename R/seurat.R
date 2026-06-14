@@ -28,6 +28,7 @@ pflogpf <- function(object, assay = NULL, layer = "counts", target = "auto",
   counts <- seurat_assay_matrix(object, assay = assay, layer = layer)
   norm <- normalize_matrix(counts, target = target, alpha = alpha, log1p = log1p, center = TRUE)
 
+  object@misc$scclrR <- object@misc$scclrR %||% list()
   object <- set_seurat_assay_matrix(object, norm$sparse, assay = assay, layer = key.added)
   object[[center.key]] <- norm$center
   object@misc$scclrR[[key.added]] <- list(
@@ -83,6 +84,7 @@ run_pca <- function(object, assay = NULL, layer = "pflogpf",
     seed = seed,
     tol = tol
   )
+  object@misc$scclrR <- object@misc$scclrR %||% list()
   dr <- SeuratObject::CreateDimReducObject(
     embeddings = pca$scores,
     loadings = pca$loadings,

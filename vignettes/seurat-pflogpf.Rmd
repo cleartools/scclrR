@@ -1,122 +1,193 @@
 ---
-title: "PFlogPF normalization in Seurat with scclrR"
-output: rmarkdown::html_vignette
+title: "PFlogPF PCA for Angelidis lung pseudobulk RNA-seq"
+output:
+  rmarkdown::html_vignette:
+    fig_width: 7
+    fig_height: 5
 vignette: >
-  %\VignetteIndexEntry{PFlogPF normalization in Seurat with scclrR}
+  %\VignetteIndexEntry{PFlogPF PCA for Angelidis lung pseudobulk RNA-seq}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
+has_deps <- all(vapply(
+  c("Seurat", "SeuratObject", "edgeR", "ggplot2"),
+  requireNamespace,
+  quietly = TRUE,
+  FUN.VALUE = logical(1)
+))
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE
+  fig.align = "center",
+  eval = has_deps
 )
 ```
 
-`scclrR` is designed to feel like a normal Seurat preprocessing step. It reads
-a feature-by-cell count matrix from a Seurat assay, computes PFlogPF in Rust, and
-writes two pieces back to the object:
+This vignette reproduces the first idea in manuscript Figure 3 with the R API:
+PFlogPF can be useful not only for individual-cell matrices, but also for
+sample-level pseudobulk RNA-seq. The example uses mouse-level lung pseudobulk
+counts from Angelidis et al. 2019, included in `inst/extdata`.
 
-1. a sparse assay layer containing the shifted log values, and
-2. a per-cell centering vector in object metadata.
+`scclrR` stores PFlogPF as two pieces:
 
-The normalized value used for PCA is the implicit matrix
-`sparse_layer - center_vector`, so the centered CLR matrix does not need to be
-stored densely.
+- a sparse shifted-log matrix, stored as a Seurat assay layer when the installed
+  Seurat version supports layers, and
+- a per-sample centering vector, stored in Seurat metadata.
 
-## A Seurat object
+PCA is then run on the implicit centered matrix without densifying it.
 
-This vignette uses Seurat's bundled PBMC example when available. For benchmark
-work, the same calls apply to the Ahlmann-Eltze-Huber count matrices after they
-are read into a Seurat object with features in rows and cells in columns.
-
-```{r setup, eval = FALSE}
+```{r setup}
 library(scclrR)
+library(Matrix)
 library(Seurat)
-
-data("pbmc_small")
-pbmc <- pbmc_small
-DefaultAssay(pbmc) <- "RNA"
+library(edgeR)
+library(ggplot2)
 ```
 
-For an external Matrix Market file, the typical Seurat setup is:
+## Read the included pseudobulk data
 
-```{r external-example, eval = FALSE}
-counts <- Matrix::readMM("counts.mtx.gz")
-genes <- read.delim("features.tsv.gz", header = FALSE)
-cells <- read.delim("barcodes.tsv.gz", header = FALSE)
-rownames(counts) <- make.unique(genes[[1]])
-colnames(counts) <- cells[[1]]
+The count matrix is genes by mouse samples, which is the orientation expected by
+Seurat.
 
-obj <- CreateSeuratObject(counts = counts, assay = "RNA")
+```{r read-data}
+counts <- readMM(system.file(
+  "extdata",
+  "angelidis_lung_pseudobulk_counts.mtx.gz",
+  package = "scclrR"
+))
+samples <- read.csv(system.file(
+  "extdata",
+  "angelidis_lung_pseudobulk_samples.csv",
+  package = "scclrR"
+))
+genes <- read.csv(system.file(
+  "extdata",
+  "angelidis_lung_pseudobulk_genes.csv",
+  package = "scclrR"
+))
+
+rownames(counts) <- make.unique(genes$gene)
+colnames(counts) <- samples$sample
+
+lung <- CreateSeuratObject(counts = counts, meta.data = samples)
+DefaultAssay(lung) <- "RNA"
+table(lung$age_label)
 ```
 
-## Normalize with PFlogPF
+## PFlogPF normalization and PCA
 
-`target = "auto"` estimates the overdispersion `alpha` and sets
-`K = 4 * alpha * mean_depth`. You can also pass a numeric `target` to use a
-fixed `K`, or pass `alpha = ...` directly.
+`target = "auto"` estimates the overdispersion and sets the shifted-log scale
+`K = 4 * alpha * mean_depth`. The returned object contains a sparse PFlogPF
+layer and a metadata column named `pflogpf_center`.
 
-```{r normalize, eval = FALSE}
-pbmc <- pflogpf(
-  pbmc,
+```{r pflogpf}
+lung <- pflogpf(
+  lung,
   assay = "RNA",
   layer = "counts",
   target = "auto",
   key.added = "pflogpf"
 )
 
-pbmc@misc$scclrR$pflogpf
-head(pbmc[["pflogpf_center"]])
+lung@misc$scclrR$pflogpf[c("k", "alpha", "center_key")]
+head(lung[["pflogpf_center"]])
 ```
 
-The sparse shifted-log values are stored in an assay layer named `"pflogpf"`.
-The cell centering vector is stored in metadata as `"pflogpf_center"`.
+Now run sparse PCA through the Rust `rupca` backend. `run_pca()` reads the
+sparse PFlogPF layer plus the centering vector and writes a standard Seurat
+dimensional reduction.
 
-## PCA without densifying
-
-`run_pca()` reads both pieces and calls the Rust `rupca` backend on the implicit
-shifted-CLR matrix.
-
-```{r pca, eval = FALSE}
-pbmc <- run_pca(
-  pbmc,
+```{r run-pca}
+lung <- run_pca(
+  lung,
   assay = "RNA",
   layer = "pflogpf",
   center.key = "pflogpf_center",
   reduction.name = "scclr_pca",
-  n.components = 10
+  n.components = 5,
+  ncv = 12
 )
 
-Embeddings(pbmc, "scclr_pca")[1:5, 1:5]
-Loadings(pbmc, "scclr_pca")[1:5, 1:5]
+lung@misc$scclrR$scclr_pca$explained_variance_ratio[1:2]
 ```
 
-The resulting reduction can be used wherever Seurat expects a dimensional
-reduction:
+## PCA panel
 
-```{r downstream, eval = FALSE}
-pbmc <- FindNeighbors(pbmc, reduction = "scclr_pca", dims = 1:10)
-pbmc <- FindClusters(pbmc)
-pbmc <- RunUMAP(pbmc, reduction = "scclr_pca", dims = 1:10)
+This is the R/Seurat analogue of the manuscript Figure 3 PFlogPF PCA panel.
+
+```{r pca-plot, fig.cap = "PFlogPF PCA of Angelidis lung pseudobulk samples. Each point is one mouse-level pseudobulk sample."}
+pca_df <- data.frame(
+  sample = colnames(lung),
+  Embeddings(lung, "scclr_pca")[, 1:2, drop = FALSE],
+  age_label = lung$age_label,
+  age = lung$age,
+  n_cells = lung$n_cells
+)
+names(pca_df)[2:3] <- c("PC1", "PC2")
+var <- lung@misc$scclrR$scclr_pca$explained_variance_ratio
+
+ggplot(pca_df, aes(PC1, PC2, color = age_label, shape = age_label)) +
+  geom_hline(yintercept = 0, linewidth = 0.25, color = "grey85") +
+  geom_vline(xintercept = 0, linewidth = 0.25, color = "grey85") +
+  geom_point(size = 3.2, stroke = 0.5) +
+  geom_text(aes(label = sample), nudge_x = 0.04, nudge_y = 0.04, size = 2.6, show.legend = FALSE) +
+  scale_color_manual(values = c(Young = "#2c7fb8", Old = "#d95f5f")) +
+  scale_shape_manual(values = c(Young = 16, Old = 17)) +
+  labs(
+    x = sprintf("PC1 (%.1f%% variance)", 100 * var[1]),
+    y = sprintf("PC2 (%.1f%% variance)", 100 * var[2]),
+    color = NULL,
+    shape = NULL
+  ) +
+  theme_classic(base_size = 11) +
+  theme(legend.position = "top")
 ```
 
-## Representation details
+## edgeR old-vs-young comparison
 
-For a count matrix with genes in rows and cells in columns, `scclrR` passes the
-`dgCMatrix` slots directly to Rust. The column-compressed representation of a
-gene-by-cell matrix is exactly the row-compressed representation of a
-cell-by-gene matrix, so the Rust code can operate in the same orientation used
-by `scclr` for AnnData.
+The manuscript figure compares PC1 loadings to a supervised old-vs-young
+differential expression estimate. In R, the natural replacement is `edgeR`.
 
-The dense value for cell `i`, gene `j` is
+```{r edger}
+group <- factor(lung$age_label, levels = c("Young", "Old"))
+y <- DGEList(counts = counts, group = group)
+keep <- filterByExpr(y, group = group)
+y <- y[keep, , keep.lib.sizes = FALSE]
+y <- calcNormFactors(y)
+design <- model.matrix(~ group)
+y <- estimateDisp(y, design)
+fit <- glmQLFit(y, design)
+qlf <- glmQLFTest(fit, coef = "groupOld")
+de <- topTags(qlf, n = Inf)$table
+de$gene <- rownames(de)
 
-```text
-log_values[i, j] - center[i]
+loadings <- data.frame(
+  gene = rownames(Loadings(lung, "scclr_pca")),
+  pc1_loading = Loadings(lung, "scclr_pca")[, 1]
+)
+merged <- merge(loadings, de, by = "gene")
+cor(merged$pc1_loading, merged$logFC)
 ```
 
-where `log_values` is sparse and `center` is dense of length `ncol(counts)`.
-This is why PFlogPF can remain sparse for storage while still using the exact
-centered geometry for PCA.
+```{r loading-plot, fig.cap = "PFlogPF PC1 loadings compared with edgeR old-vs-young log fold changes."}
+ggplot(merged, aes(logFC, pc1_loading)) +
+  geom_point(aes(color = FDR < 0.05), alpha = 0.6, size = 1.2) +
+  scale_color_manual(values = c(`FALSE` = "grey70", `TRUE` = "#2c7fb8"), name = "edgeR FDR < 0.05") +
+  labs(x = "edgeR old-vs-young log fold change", y = "PFlogPF PC1 loading") +
+  theme_classic(base_size = 11)
+```
+
+The point is not that PCA is a replacement for supervised differential
+expression. Rather, PFlogPF makes the leading unsupervised geometry much less
+dominated by library-depth and high-count baseline effects, so the PCA axis is
+more interpretable in a sample-level RNA-seq setting.
+
+```{r no-deps-message, eval = !has_deps, echo = FALSE}
+cat(
+  "This vignette needs Seurat, SeuratObject, edgeR, and ggplot2 to execute. ",
+  "The source still documents the complete workflow; pkgdown/GitHub Actions ",
+  "installs those packages before rendering the site."
+)
+```

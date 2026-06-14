@@ -42,6 +42,8 @@ seurat_assay_matrix <- function(object, assay = NULL, layer = "counts") {
   if (requireNamespace("SeuratObject", quietly = TRUE) &&
       exists("LayerData", envir = asNamespace("SeuratObject"), mode = "function")) {
     SeuratObject::LayerData(object = object[[assay]], layer = layer)
+  } else if (!is.null(object@misc$scclrR$layers[[assay]][[layer]])) {
+    object@misc$scclrR$layers[[assay]][[layer]]
   } else {
     SeuratObject::GetAssayData(object = object, assay = assay, slot = layer)
   }
@@ -51,10 +53,18 @@ set_seurat_assay_matrix <- function(object, value, assay = NULL, layer = "pflogp
   assay <- assay %||% SeuratObject::DefaultAssay(object)
   if (requireNamespace("SeuratObject", quietly = TRUE) &&
       exists("LayerData<-", envir = asNamespace("SeuratObject"), mode = "function")) {
-    SeuratObject::LayerData(object = object[[assay]], layer = layer) <- value
+    assay_obj <- object[[assay]]
+    SeuratObject::LayerData(object = assay_obj, layer = layer) <- value
+    object[[assay]] <- assay_obj
     object
-  } else {
+  } else if (layer %in% c("counts", "data", "scale.data")) {
     SeuratObject::SetAssayData(object = object, assay = assay, slot = layer, new.data = value)
+  } else {
+    object@misc$scclrR <- object@misc$scclrR %||% list()
+    object@misc$scclrR$layers <- object@misc$scclrR$layers %||% list()
+    object@misc$scclrR$layers[[assay]] <- object@misc$scclrR$layers[[assay]] %||% list()
+    object@misc$scclrR$layers[[assay]][[layer]] <- value
+    object
   }
 }
 

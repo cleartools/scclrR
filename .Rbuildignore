@@ -1,0 +1,6 @@
+^[.]github$
+^[.]github/
+^docs$
+^scclrR[.]Rproj$
+^[.]Rproj[.]user$
+^README[.]Rmd$
