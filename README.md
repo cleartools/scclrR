@@ -5,8 +5,9 @@
 PFlogPF, also called shifted centered log-ratio normalization, and runs sparse
 PCA through Rust bindings to `runorm` and `rupca`.
 
-Rendered documentation and the Angelidis pseudobulk vignette are published at
-<https://cleartools.github.io/scclrR/>.
+Rendered documentation is published at <https://cleartools.github.io/scclrR/>.
+The Angelidis pseudobulk vignette is rendered at
+<https://cleartools.github.io/scclrR/articles/seurat-pflogpf.html>.
 
 The key representation is:
 
@@ -53,4 +54,7 @@ Embeddings(pbmc, "scclr_pca")[1:5, 1:5]
 `K = 4 * alpha * mean_depth`. Numeric `target` values are interpreted as a
 fixed `K`.
 
-See `vignettes/seurat-pflogpf.Rmd` for a complete Seurat-style workflow.
+See the
+[rendered Angelidis pseudobulk vignette](https://cleartools.github.io/scclrR/articles/seurat-pflogpf.html)
+for a complete Seurat-style workflow. The source is
+`vignettes/seurat-pflogpf.Rmd`.
