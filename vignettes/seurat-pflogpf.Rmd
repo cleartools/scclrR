@@ -132,7 +132,12 @@ ggplot(pca_df, aes(PC1, PC2, color = age_label, shape = age_label)) +
   geom_hline(yintercept = 0, linewidth = 0.25, color = "grey85") +
   geom_vline(xintercept = 0, linewidth = 0.25, color = "grey85") +
   geom_point(size = 3.2, stroke = 0.5) +
-  geom_text(aes(label = sample), nudge_x = 0.04, nudge_y = 0.04, size = 2.6, show.legend = FALSE) +
+  geom_text(
+    aes(label = sample, hjust = ifelse(PC1 < 0, 1.12, -0.12)),
+    size = 2.6,
+    check_overlap = TRUE,
+    show.legend = FALSE
+  ) +
   scale_color_manual(values = c(Young = "#2c7fb8", Old = "#d95f5f")) +
   scale_shape_manual(values = c(Young = 16, Old = 17)) +
   labs(
