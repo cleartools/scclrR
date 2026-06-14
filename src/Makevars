@@ -1,0 +1,17 @@
+RUST_DIR = rust
+RUST_LIB = $(RUST_DIR)/target/release/libscclrR.a
+
+.PHONY: all
+all: $(SHLIB)
+
+OBJECTS = init.o
+PKG_LIBS = $(RUST_LIB)
+
+init.o: $(RUST_LIB)
+
+$(RUST_LIB): $(RUST_DIR)/Cargo.toml $(RUST_DIR)/src/lib.rs
+	cd $(RUST_DIR) && cargo build --release --lib
+
+clean:
+	cd $(RUST_DIR) && cargo clean
+	rm -f $(OBJECTS) $(SHLIB)

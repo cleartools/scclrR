@@ -1,0 +1,122 @@
+---
+title: "PFlogPF normalization in Seurat with scclrR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{PFlogPF normalization in Seurat with scclrR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+`scclrR` is designed to feel like a normal Seurat preprocessing step. It reads
+a feature-by-cell count matrix from a Seurat assay, computes PFlogPF in Rust, and
+writes two pieces back to the object:
+
+1. a sparse assay layer containing the shifted log values, and
+2. a per-cell centering vector in object metadata.
+
+The normalized value used for PCA is the implicit matrix
+`sparse_layer - center_vector`, so the centered CLR matrix does not need to be
+stored densely.
+
+## A Seurat object
+
+This vignette uses Seurat's bundled PBMC example when available. For benchmark
+work, the same calls apply to the Ahlmann-Eltze-Huber count matrices after they
+are read into a Seurat object with features in rows and cells in columns.
+
+```{r setup, eval = FALSE}
+library(scclrR)
+library(Seurat)
+
+data("pbmc_small")
+pbmc <- pbmc_small
+DefaultAssay(pbmc) <- "RNA"
+```
+
+For an external Matrix Market file, the typical Seurat setup is:
+
+```{r external-example, eval = FALSE}
+counts <- Matrix::readMM("counts.mtx.gz")
+genes <- read.delim("features.tsv.gz", header = FALSE)
+cells <- read.delim("barcodes.tsv.gz", header = FALSE)
+rownames(counts) <- make.unique(genes[[1]])
+colnames(counts) <- cells[[1]]
+
+obj <- CreateSeuratObject(counts = counts, assay = "RNA")
+```
+
+## Normalize with PFlogPF
+
+`target = "auto"` estimates the overdispersion `alpha` and sets
+`K = 4 * alpha * mean_depth`. You can also pass a numeric `target` to use a
+fixed `K`, or pass `alpha = ...` directly.
+
+```{r normalize, eval = FALSE}
+pbmc <- pflogpf(
+  pbmc,
+  assay = "RNA",
+  layer = "counts",
+  target = "auto",
+  key.added = "pflogpf"
+)
+
+pbmc@misc$scclrR$pflogpf
+head(pbmc[["pflogpf_center"]])
+```
+
+The sparse shifted-log values are stored in an assay layer named `"pflogpf"`.
+The cell centering vector is stored in metadata as `"pflogpf_center"`.
+
+## PCA without densifying
+
+`run_pca()` reads both pieces and calls the Rust `rupca` backend on the implicit
+shifted-CLR matrix.
+
+```{r pca, eval = FALSE}
+pbmc <- run_pca(
+  pbmc,
+  assay = "RNA",
+  layer = "pflogpf",
+  center.key = "pflogpf_center",
+  reduction.name = "scclr_pca",
+  n.components = 10
+)
+
+Embeddings(pbmc, "scclr_pca")[1:5, 1:5]
+Loadings(pbmc, "scclr_pca")[1:5, 1:5]
+```
+
+The resulting reduction can be used wherever Seurat expects a dimensional
+reduction:
+
+```{r downstream, eval = FALSE}
+pbmc <- FindNeighbors(pbmc, reduction = "scclr_pca", dims = 1:10)
+pbmc <- FindClusters(pbmc)
+pbmc <- RunUMAP(pbmc, reduction = "scclr_pca", dims = 1:10)
+```
+
+## Representation details
+
+For a count matrix with genes in rows and cells in columns, `scclrR` passes the
+`dgCMatrix` slots directly to Rust. The column-compressed representation of a
+gene-by-cell matrix is exactly the row-compressed representation of a
+cell-by-gene matrix, so the Rust code can operate in the same orientation used
+by `scclr` for AnnData.
+
+The dense value for cell `i`, gene `j` is
+
+```text
+log_values[i, j] - center[i]
+```
+
+where `log_values` is sparse and `center` is dense of length `ncol(counts)`.
+This is why PFlogPF can remain sparse for storage while still using the exact
+centered geometry for PCA.

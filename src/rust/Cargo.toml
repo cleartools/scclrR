@@ -1,0 +1,15 @@
+[package]
+name = "scclrR"
+version = "0.1.0"
+edition = "2021"
+description = "R bindings for sparse PFlogPF normalization and sparse PCA"
+license = "BSD-2-Clause"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+extendr-api = "0.7"
+runorm = { git = "https://github.com/cleartools/runorm", features = ["ruanndata"] }
+rupca = { git = "https://github.com/pachterlab/rupca", features = ["ruanndata"] }
+ruanndata = { git = "https://github.com/pachterlab/ruanndata" }
