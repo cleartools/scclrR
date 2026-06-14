@@ -20,6 +20,7 @@ Imports:
     methods
 Suggests:
     edgeR,
+    ggrepel,
     ggplot2,
     pkgdown,
     Seurat,

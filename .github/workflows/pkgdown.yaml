@@ -33,6 +33,7 @@ jobs:
           extra-packages: |
             any::pkgdown
             any::remotes
+            any::ggrepel
             any::ggplot2
             any::Seurat
             any::SeuratObject
