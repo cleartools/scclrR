@@ -49,7 +49,7 @@ seurat_assay_matrix <- function(object, assay = NULL, layer = "counts") {
   }
 }
 
-set_seurat_assay_matrix <- function(object, value, assay = NULL, layer = "pflogpf") {
+set_seurat_assay_matrix <- function(object, value, assay = NULL, layer = "pflog") {
   assay <- assay %||% SeuratObject::DefaultAssay(object)
   if (requireNamespace("SeuratObject", quietly = TRUE) &&
       exists("LayerData<-", envir = asNamespace("SeuratObject"), mode = "function")) {

@@ -127,7 +127,7 @@ fn scclr_overdispersion(
     Ok(list!(alpha = od.alpha, mean_depth = od.mean_depth, k = od.k))
 }
 
-/// PFlogPF normalization. Returns sparse shifted-log CSR slots plus the per-cell center vector.
+/// PFlog normalization. Returns sparse shifted-log CSR slots plus the per-cell center vector.
 #[extendr]
 fn scclr_normalize(
     data: Doubles,
@@ -187,7 +187,7 @@ fn scclr_pca(
     Ok(pca_result_list(result))
 }
 
-/// One-shot raw counts -> PFlogPF -> sparse PCA.
+/// One-shot raw counts -> PFlog -> sparse PCA.
 #[extendr]
 fn scclr_normalize_pca(
     data: Doubles,

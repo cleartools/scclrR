@@ -2,12 +2,12 @@
 
 `scclrR` is the R/Seurat companion to
 [`cleartools/scclr`](https://github.com/cleartools/scclr). It computes sparse
-PFlogPF, also called shifted centered log-ratio normalization, and runs sparse
+PFlog, also called shifted centered log-ratio normalization, and runs sparse
 PCA through Rust bindings to `runorm` and `rupca`.
 
 Rendered documentation is published at <https://cleartools.github.io/scclrR/>.
 The Angelidis pseudobulk vignette is rendered at
-<https://cleartools.github.io/scclrR/articles/seurat-pflogpf.html>.
+<https://cleartools.github.io/scclrR/articles/seurat-pflog.html>.
 
 The key representation is:
 
@@ -15,10 +15,10 @@ The key representation is:
   layer, and
 - a per-cell centering vector, stored in Seurat metadata and package metadata.
 
-The dense PFlogPF value is never materialized unless the user asks for it:
+The dense PFlog value is never materialized unless the user asks for it:
 
 ```text
-PFlogPF[i, j] = sparse_log_values[i, j] - center[i]
+PFlog[i, j] = sparse_log_values[i, j] - center[i]
 ```
 
 This is the same sparse-plus-centering representation used by `scclr` for
@@ -44,8 +44,8 @@ devtools::load_all()
 ```r
 library(scclrR)
 
-pbmc <- pflogpf(pbmc, assay = "RNA", layer = "counts", target = "auto")
-pbmc <- run_pca(pbmc, assay = "RNA", layer = "pflogpf", n.components = 50)
+pbmc <- pflog(pbmc, assay = "RNA", layer = "counts", target = "auto")
+pbmc <- run_pca(pbmc, assay = "RNA", layer = "pflog", n.components = 50)
 
 Embeddings(pbmc, "scclr_pca")[1:5, 1:5]
 ```
@@ -55,6 +55,6 @@ Embeddings(pbmc, "scclr_pca")[1:5, 1:5]
 fixed `K`.
 
 See the
-[rendered Angelidis pseudobulk vignette](https://cleartools.github.io/scclrR/articles/seurat-pflogpf.html)
+[rendered Angelidis pseudobulk vignette](https://cleartools.github.io/scclrR/articles/seurat-pflog.html)
 for a complete Seurat-style workflow. The source is
-`vignettes/seurat-pflogpf.Rmd`.
+`vignettes/seurat-pflog.Rmd`.

@@ -2,7 +2,7 @@
 name = "scclrR"
 version = "0.1.0"
 edition = "2021"
-description = "R bindings for sparse PFlogPF normalization and sparse PCA"
+description = "R bindings for sparse PFlog normalization and sparse PCA"
 license = "BSD-2-Clause"
 
 [lib]

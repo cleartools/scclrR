@@ -2,7 +2,7 @@
 % Please edit documentation in R/api.R
 \name{pca_matrix}
 \alias{pca_matrix}
-\title{Run sparse PCA on a PFlogPF matrix representation}
+\title{Run sparse PCA on a PFlog matrix representation}
 \usage{
 pca_matrix(
   sparse,
@@ -30,5 +30,5 @@ A list containing \code{scores}, \code{loadings}, explained variance fields,
 singular values, and PCA dimensions.
 }
 \description{
-Run sparse PCA on a PFlogPF matrix representation
+Run sparse PCA on a PFlog matrix representation
 }

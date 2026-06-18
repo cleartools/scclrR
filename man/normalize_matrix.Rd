@@ -2,7 +2,7 @@
 % Please edit documentation in R/api.R
 \name{normalize_matrix}
 \alias{normalize_matrix}
-\title{Normalize a count matrix with sparse PFlogPF}
+\title{Normalize a count matrix with sparse PFlog}
 \usage{
 normalize_matrix(
   counts,

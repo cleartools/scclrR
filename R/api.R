@@ -1,4 +1,4 @@
-#' Estimate count overdispersion for PFlogPF calibration
+#' Estimate count overdispersion for PFlog calibration
 #'
 #' Estimates the negative-binomial overdispersion parameter used by `target =
 #' "auto"`. The input matrix is expected to be features by cells, as in a Seurat
@@ -14,7 +14,7 @@ estimate_overdispersion <- function(counts) {
   .scclr_overdispersion(s$x, s$i, s$p, s$n_cells, s$n_features)
 }
 
-#' Normalize a count matrix with sparse PFlogPF
+#' Normalize a count matrix with sparse PFlog
 #'
 #' Returns the sparse shifted-log values and the per-cell centering vector. The
 #' dense normalized matrix is represented implicitly as `sparse - center`.
@@ -50,7 +50,7 @@ normalize_matrix <- function(counts, target = "auto", alpha = NULL,
   )
 }
 
-#' Run sparse PCA on a PFlogPF matrix representation
+#' Run sparse PCA on a PFlog matrix representation
 #'
 #' @param sparse Sparse shifted-log matrix with features in rows and cells in
 #'   columns.

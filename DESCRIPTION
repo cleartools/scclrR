@@ -1,13 +1,13 @@
 Package: scclrR
-Title: Sparse PFlogPF Normalization and PCA for Seurat Objects
+Title: Sparse PFlog Normalization and PCA for Seurat Objects
 Version: 0.1.0
 Authors@R:
     c(person("Lior", "Pachter", role = c("aut", "cre"),
              email = "lpachter@caltech.edu"))
 Description: R bindings for shifted centered log-ratio normalization
-    (PFlogPF) and sparse PCA. The package stores the sparse log-transformed
+    (PFlog) and sparse PCA. The package stores the sparse log-transformed
     matrix and the per-cell centering vector separately, so Seurat workflows can
-    use PFlogPF without materializing a dense normalized matrix.
+    use PFlog without materializing a dense normalized matrix.
 License: BSD_2_clause + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

@@ -2,12 +2,12 @@
 % Please edit documentation in R/seurat.R
 \name{run_pca}
 \alias{run_pca}
-\title{Run sparse PFlogPF PCA on a Seurat object}
+\title{Run sparse PFlog PCA on a Seurat object}
 \usage{
 run_pca(
   object,
   assay = NULL,
-  layer = "pflogpf",
+  layer = "pflog",
   center.key = paste0(layer, "_center"),
   reduction.name = "scclr_pca",
   reduction.key = "sclr_",
@@ -23,7 +23,7 @@ run_pca(
 
 \item{assay}{Assay name. Defaults to \code{DefaultAssay(object)}.}
 
-\item{layer}{PFlogPF sparse layer.}
+\item{layer}{PFlog sparse layer.}
 
 \item{center.key}{Metadata column containing the centering vector.}
 
@@ -39,7 +39,7 @@ run_pca(
 The modified Seurat object.
 }
 \description{
-Reads the sparse PFlogPF layer and centering vector written by \code{pflogpf()},
+Reads the sparse PFlog layer and centering vector written by \code{pflog()},
 runs PCA via Rust on the implicit centered matrix, and stores a Seurat
 dimensional reduction.
 }

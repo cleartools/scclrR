@@ -1,11 +1,11 @@
 ---
-title: "PFlogPF PCA for Angelidis lung pseudobulk RNA-seq"
+title: "PFlog PCA for Angelidis lung pseudobulk RNA-seq"
 output:
   rmarkdown::html_vignette:
     fig_width: 7
     fig_height: 5
 vignette: >
-  %\VignetteIndexEntry{PFlogPF PCA for Angelidis lung pseudobulk RNA-seq}
+  %\VignetteIndexEntry{PFlog PCA for Angelidis lung pseudobulk RNA-seq}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -26,11 +26,11 @@ knitr::opts_chunk$set(
 ```
 
 This vignette reproduces the first idea in manuscript Figure 3 with the R API:
-PFlogPF can be useful not only for individual-cell matrices, but also for
+PFlog can be useful not only for individual-cell matrices, but also for
 sample-level pseudobulk RNA-seq. The example uses mouse-level lung pseudobulk
 counts from Angelidis et al. 2019, included in `inst/extdata`.
 
-`scclrR` stores PFlogPF as two pieces:
+`scclrR` stores PFlog as two pieces:
 
 - a sparse shifted-log matrix, stored as a Seurat assay layer when the installed
   Seurat version supports layers, and
@@ -77,35 +77,37 @@ DefaultAssay(lung) <- "RNA"
 table(lung$age_label)
 ```
 
-## PFlogPF normalization and PCA
+## PFlog normalization and PCA
 
-`target = "auto"` estimates the overdispersion and sets the shifted-log scale
-`K = 4 * alpha * mean_depth`. The returned object contains a sparse PFlogPF
-layer and a metadata column named `pflogpf_center`.
+`target = "auto"` estimates the overdispersion `alpha` and applies **PFlog**: the
+centered log-ratio of the counts shifted by a uniform pseudocount `1/(4 * alpha)`,
+`center(log(x + 1/(4 * alpha)))` (computed as the equivalent sparsity-preserving
+`center(log1p(4 * alpha * x))`). The returned object contains a sparse PFlog layer
+and a metadata column named `pflog_center`.
 
-```{r pflogpf}
-lung <- pflogpf(
+```{r pflog}
+lung <- pflog(
   lung,
   assay = "RNA",
   layer = "counts",
   target = "auto",
-  key.added = "pflogpf"
+  key.added = "pflog"
 )
 
-lung@misc$scclrR$pflogpf[c("k", "alpha", "center_key")]
-head(lung[["pflogpf_center"]])
+lung@misc$scclrR$pflog[c("k", "alpha", "center_key")]
+head(lung[["pflog_center"]])
 ```
 
 Now run sparse PCA through the Rust `rupca` backend. `run_pca()` reads the
-sparse PFlogPF layer plus the centering vector and writes a standard Seurat
+sparse PFlog layer plus the centering vector and writes a standard Seurat
 dimensional reduction.
 
 ```{r run-pca}
 lung <- run_pca(
   lung,
   assay = "RNA",
-  layer = "pflogpf",
-  center.key = "pflogpf_center",
+  layer = "pflog",
+  center.key = "pflog_center",
   reduction.name = "scclr_pca",
   n.components = 5,
   ncv = 12
@@ -116,9 +118,9 @@ lung@misc$scclrR$scclr_pca$explained_variance_ratio[1:2]
 
 ## PCA panel
 
-This is the R/Seurat analogue of the manuscript Figure 3 PFlogPF PCA panel.
+This is the R/Seurat analogue of the manuscript Figure 3 PFlog PCA panel.
 
-```{r pca-plot, fig.cap = "PFlogPF PCA of Angelidis lung pseudobulk samples. Each point is one mouse-level pseudobulk sample."}
+```{r pca-plot, fig.cap = "PFlog PCA of Angelidis lung pseudobulk samples. Each point is one mouse-level pseudobulk sample."}
 pca_df <- data.frame(
   sample = colnames(lung),
   Embeddings(lung, "scclr_pca")[, 1:2, drop = FALSE],
@@ -227,11 +229,11 @@ if (cor(merged_seurat$pc1_loading, merged_seurat$logFC) < 0) {
 cor(merged_seurat$pc1_loading, merged_seurat$logFC)
 ```
 
-```{r loading-plot, fig.cap = "PFlogPF PC1 loadings compared with edgeR old-vs-young log fold changes."}
+```{r loading-plot, fig.cap = "PFlog PC1 loadings compared with edgeR old-vs-young log fold changes."}
 ggplot(merged, aes(pc1_loading, logFC)) +
   geom_point(aes(color = FDR < 0.05), alpha = 0.6, size = 1.2) +
   scale_color_manual(values = c(`FALSE` = "grey70", `TRUE` = "#2c7fb8"), name = "edgeR FDR < 0.05") +
-  labs(x = "PFlogPF PC1 loading", y = "edgeR old-vs-young log fold change") +
+  labs(x = "PFlog PC1 loading", y = "edgeR old-vs-young log fold change") +
   theme_classic(base_size = 11)
 ```
 
@@ -244,7 +246,7 @@ ggplot(merged_seurat, aes(pc1_loading, logFC)) +
 ```
 
 The point is not that PCA is a replacement for supervised differential
-expression. Rather, PFlogPF makes the leading unsupervised geometry much less
+expression. Rather, PFlog makes the leading unsupervised geometry much less
 dominated by library-depth and high-count baseline effects, so the PCA axis is
 more interpretable in a sample-level RNA-seq setting.
 

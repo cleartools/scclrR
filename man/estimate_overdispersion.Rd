@@ -2,7 +2,7 @@
 % Please edit documentation in R/api.R
 \name{estimate_overdispersion}
 \alias{estimate_overdispersion}
-\title{Estimate count overdispersion for PFlogPF calibration}
+\title{Estimate count overdispersion for PFlog calibration}
 \usage{
 estimate_overdispersion(counts)
 }

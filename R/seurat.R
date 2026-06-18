@@ -1,9 +1,13 @@
-#' Add sparse PFlogPF normalization to a Seurat object
+#' Add sparse PFlog normalization to a Seurat object
 #'
-#' `pflogpf()` reads a Seurat assay layer, computes PFlogPF using Rust, stores
+#' `pflog()` reads a Seurat assay layer, computes PFlog using Rust, stores
 #' the sparse shifted-log values as a new assay layer, and stores the per-cell
 #' centering vector in `object[[]]`. Downstream PCA can then use the implicit
 #' matrix `layer - center` without densifying.
+#'
+#' PFlog is the centered log-ratio of the counts shifted by a uniform pseudocount
+#' `1/(4 * alpha)`, `center(log(x + 1/(4 * alpha)))` (computed as the equivalent
+#' sparsity-preserving `center(log1p(4 * alpha * x))`).
 #'
 #' @param object A Seurat object.
 #' @param assay Assay name. Defaults to `DefaultAssay(object)`.
@@ -17,10 +21,10 @@
 #' @param log1p Whether to use shifted log.
 #' @return The modified Seurat object.
 #' @export
-pflogpf <- function(object, assay = NULL, layer = "counts", target = "auto",
-                    alpha = NULL, key.added = "pflogpf",
-                    center.key = paste0(key.added, "_center"),
-                    log1p = TRUE) {
+pflog <- function(object, assay = NULL, layer = "counts", target = "auto",
+                  alpha = NULL, key.added = "pflog",
+                  center.key = paste0(key.added, "_center"),
+                  log1p = TRUE) {
   if (!requireNamespace("SeuratObject", quietly = TRUE)) {
     stop("The SeuratObject package is required for Seurat integration.", call. = FALSE)
   }
@@ -45,15 +49,15 @@ pflogpf <- function(object, assay = NULL, layer = "counts", target = "auto",
   object
 }
 
-#' Run sparse PFlogPF PCA on a Seurat object
+#' Run sparse PFlog PCA on a Seurat object
 #'
-#' Reads the sparse PFlogPF layer and centering vector written by `pflogpf()`,
+#' Reads the sparse PFlog layer and centering vector written by `pflog()`,
 #' runs PCA via Rust on the implicit centered matrix, and stores a Seurat
 #' dimensional reduction.
 #'
 #' @param object A Seurat object.
 #' @param assay Assay name. Defaults to `DefaultAssay(object)`.
-#' @param layer PFlogPF sparse layer.
+#' @param layer PFlog sparse layer.
 #' @param center.key Metadata column containing the centering vector.
 #' @param reduction.name Name of the Seurat dimensional reduction to write.
 #' @param reduction.key Prefix for component names.
@@ -61,7 +65,7 @@ pflogpf <- function(object, assay = NULL, layer = "counts", target = "auto",
 #' @param ncv,maxiter,seed,tol Parameters forwarded to the Rust eigensolver.
 #' @return The modified Seurat object.
 #' @export
-run_pca <- function(object, assay = NULL, layer = "pflogpf",
+run_pca <- function(object, assay = NULL, layer = "pflog",
                     center.key = paste0(layer, "_center"),
                     reduction.name = "scclr_pca",
                     reduction.key = "sclr_",

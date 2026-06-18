@@ -12,7 +12,7 @@ navbar:
 reference:
   - title: Seurat workflow
     contents:
-      - pflogpf
+      - pflog
       - run_pca
   - title: Matrix API
     contents:
@@ -24,4 +24,4 @@ articles:
   - title: Vignettes
     navbar: ~
     contents:
-      - seurat-pflogpf
+      - seurat-pflog

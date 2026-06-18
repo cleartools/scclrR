@@ -4,9 +4,9 @@
 \name{scclrR-package}
 \alias{scclrR}
 \alias{scclrR-package}
-\title{scclrR: Sparse PFlogPF normalization and PCA for Seurat}
+\title{scclrR: Sparse PFlog normalization and PCA for Seurat}
 \description{
-\code{scclrR} stores PFlogPF as a sparse shifted-log matrix plus a per-cell
+\code{scclrR} stores PFlog as a sparse shifted-log matrix plus a per-cell
 centering vector, and runs PCA on the implicit centered matrix through Rust.
 }
 \seealso{
