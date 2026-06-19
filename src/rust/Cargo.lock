@@ -387,7 +387,7 @@ dependencies = [
 [[package]]
 name = "runorm"
 version = "0.1.0"
-source = "git+https://github.com/cleartools/runorm#5fceedd936647fb0b50c8fe2275eb362f815ff3b"
+source = "git+https://github.com/cleartools/runorm#9429aa00784a972fdeae64e0ca050ea08f3c5bc9"
 dependencies = [
  "rayon",
  "ruanndata",
